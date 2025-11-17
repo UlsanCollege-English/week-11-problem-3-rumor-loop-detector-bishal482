@@ -1,3 +1,11 @@
+"""
+HW03 — Rumor Loop Detector (Cycle in Undirected Graph)
+
+Implement:
+- has_cycle(graph)
+- find_cycle(graph)
+"""
+
 def _get_all_nodes(graph):
     """Generates a set of all unique nodes present in the graph (keys and values)."""
     nodes = set(graph.keys())
@@ -6,7 +14,9 @@ def _get_all_nodes(graph):
     return nodes
 
 def _dfs_cycle_finder(graph, node, visited, parent_map, cycle_found):
-    # (The body of this function remains the same)
+    """Helper function for DFS to detect and find a cycle."""
+    
+    # Stop search if a cycle was already found and stored
     if cycle_found:
         return True
 
@@ -14,74 +24,76 @@ def _dfs_cycle_finder(graph, node, visited, parent_map, cycle_found):
     
     for neighbor in graph.get(node, []):
         if neighbor not in visited:
+            # Explore unvisited neighbor
             parent_map[neighbor] = node
             if _dfs_cycle_finder(graph, neighbor, visited, parent_map, cycle_found):
                 return True
         elif neighbor != parent_map.get(node):
-            # Cycle detected and path reconstruction logic (unchanged)
-            cycle_end = neighbor
-            cycle_path = [cycle_end]
-            current = node
-            while current != cycle_end:
-                cycle_path.append(current)
-                current = parent_map.get(current)
+            # Cycle detected! Found a back edge to a visited node that is not the parent.
             
-            cycle_path.append(cycle_end)
-            cycle_path.reverse()
+            # 1. Handle self-loop case explicitly for clean path reconstruction
+            if node == neighbor:
+                cycle_path = [node, neighbor]
+            else:
+                # 2. Reconstruct the cycle by tracing back from the current node
+                cycle_end = neighbor
+                cycle_path = [cycle_end]
+                current = node
+                while current != cycle_end:
+                    cycle_path.append(current)
+                    current = parent_map.get(current)
+                
+                # 3. Close the cycle and reverse for correct order
+                cycle_path.append(cycle_end)
+                cycle_path.reverse()
             
+            # Store the found cycle (passed by reference)
             cycle_found.extend(cycle_path)
             return True
             
     return False
 
 def has_cycle(graph: dict) -> bool:
-    """
-    Checks if an undirected graph contains any cycles.
-    """
+    """Return True if the undirected graph has any cycle; else False."""
     visited = set()
-    all_nodes = _get_all_nodes(graph) # Use all unique nodes
+    all_nodes = _get_all_nodes(graph) 
     
-    # Iterate over all nodes to handle disconnected components
     for node in all_nodes:
         if node not in visited:
-            # Iterative DFS for cycle detection
-            stack = [(node, None)]  # (current_node, parent_node)
+            # Iterative DFS: (current_node, parent_node)
+            stack = [(node, None)]
             local_visited = {node}
             
             while stack:
                 curr, parent = stack.pop()
                 
-                # Use .get() defensively against missing keys
-                for neighbor in graph.get(curr, []): 
+                for neighbor in graph.get(curr, []):
                     if neighbor not in local_visited:
                         local_visited.add(neighbor)
                         stack.append((neighbor, curr))
+                    # Cycle condition: back edge to a visited, non-parent node
                     elif neighbor != parent:
-                        # Back edge to a visited but non-parent node found
                         return True
 
-            # Merge results for all components
-            visited.update(local_visited)
+            visited.update(local_visited) # Update global visited set
 
     return False
 
 def find_cycle(graph: dict) -> list or None:
-    """
-    Finds one cycle in an undirected graph and returns it as a list, 
-    where the first and last elements are the same node.
+    """Return a list of nodes forming a simple cycle where first == last.
+    If no cycle, return None.
     """
     visited = set()
     parent_map = {}
     cycle_found = []
-    all_nodes = _get_all_nodes(graph) # Use all unique nodes
+    all_nodes = _get_all_nodes(graph)
     
-    # Iterate over all nodes to ensure we check disconnected components
     for node in all_nodes:
         if node not in visited:
-            # Set the parent for the start node of the component
+            # Start node of a component has no parent
             parent_map[node] = None 
             
-            # Recursive DFS for cycle finding
+            # Use recursive DFS to find and reconstruct the cycle
             if _dfs_cycle_finder(graph, node, visited, parent_map, cycle_found):
                 return cycle_found
 
