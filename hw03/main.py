@@ -1,16 +1,12 @@
+def _get_all_nodes(graph):
+    """Generates a set of all unique nodes present in the graph (keys and values)."""
+    nodes = set(graph.keys())
+    for neighbors in graph.values():
+        nodes.update(neighbors)
+    return nodes
+
 def _dfs_cycle_finder(graph, node, visited, parent_map, cycle_found):
-    """
-    Helper function for Depth-First Search to detect and find a cycle.
-    
-    :param graph: The adjacency list dictionary.
-    :param node: The current node being visited.
-    :param visited: Set of nodes already visited.
-    :param parent_map: Dictionary to store the parent of each node: {child: parent}.
-    :param cycle_found: List to store the cycle when found (passed by reference).
-    :return: True if a cycle is detected and stored, False otherwise.
-    """
-    
-    # Check if a cycle was already found by a previous recursive call
+    # (The body of this function remains the same)
     if cycle_found:
         return True
 
@@ -18,31 +14,21 @@ def _dfs_cycle_finder(graph, node, visited, parent_map, cycle_found):
     
     for neighbor in graph.get(node, []):
         if neighbor not in visited:
-            # Explore unvisited neighbor
             parent_map[neighbor] = node
             if _dfs_cycle_finder(graph, neighbor, visited, parent_map, cycle_found):
                 return True
         elif neighbor != parent_map.get(node):
-            # Cycle detected! Found a back edge to an already visited node 
-            # that is not the direct parent.
-            
-            # 1. Identify the cycle start/end point (the neighbor)
+            # Cycle detected and path reconstruction logic (unchanged)
             cycle_end = neighbor
             cycle_path = [cycle_end]
-            
-            # 2. Trace back from the current node (the one that found the back edge)
             current = node
             while current != cycle_end:
                 cycle_path.append(current)
                 current = parent_map.get(current)
             
-            # 3. Add the starting node again to close the cycle
             cycle_path.append(cycle_end)
-            
-            # 4. Reverse the path to get the cycle in the correct traversal order
             cycle_path.reverse()
             
-            # Store the found cycle
             cycle_found.extend(cycle_path)
             return True
             
@@ -53,18 +39,20 @@ def has_cycle(graph: dict) -> bool:
     Checks if an undirected graph contains any cycles.
     """
     visited = set()
+    all_nodes = _get_all_nodes(graph) # Use all unique nodes
     
     # Iterate over all nodes to handle disconnected components
-    for node in graph:
+    for node in all_nodes:
         if node not in visited:
-            # We use a simplified DFS check here, as we only need True/False
+            # Iterative DFS for cycle detection
             stack = [(node, None)]  # (current_node, parent_node)
             local_visited = {node}
             
             while stack:
                 curr, parent = stack.pop()
                 
-                for neighbor in graph.get(curr, []):
+                # Use .get() defensively against missing keys
+                for neighbor in graph.get(curr, []): 
                     if neighbor not in local_visited:
                         local_visited.add(neighbor)
                         stack.append((neighbor, curr))
@@ -85,14 +73,15 @@ def find_cycle(graph: dict) -> list or None:
     visited = set()
     parent_map = {}
     cycle_found = []
+    all_nodes = _get_all_nodes(graph) # Use all unique nodes
     
     # Iterate over all nodes to ensure we check disconnected components
-    for node in graph:
+    for node in all_nodes:
         if node not in visited:
-            # For the first node of a component, it has no parent
+            # Set the parent for the start node of the component
             parent_map[node] = None 
             
-            # If the cycle finder finds a cycle in this component, return it
+            # Recursive DFS for cycle finding
             if _dfs_cycle_finder(graph, node, visited, parent_map, cycle_found):
                 return cycle_found
 
