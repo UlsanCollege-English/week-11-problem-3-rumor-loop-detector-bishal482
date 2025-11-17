@@ -1,5 +1,3 @@
-from collections import deque
-
 def _dfs_cycle_finder(graph, node, visited, parent_map, cycle_found):
     """
     Helper function for Depth-First Search to detect and find a cycle.
